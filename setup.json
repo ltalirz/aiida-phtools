@@ -1,0 +1,47 @@
+{
+    "name": "aiida-phtools",
+    "author": "Leopold Talirz",
+    "author_email": "leopold.talirz@gmail.com",
+    "description": "AiiDA plugin for persistence homology tools, used to analyze nanoporous materials.",
+    "url": "https://github.com/ltalirz/aiida-phtools",
+    "license": "MIT",
+    "classifiers": [
+        "Programming Language :: Python"
+    ],
+    "version": "0.1-alpha",
+    "entry_points": {
+        "aiida.calculations": [
+            "phtools.surface = aiida_phtools.calculations:PoreSurfaceCalculation"
+        ],
+        "aiida.parsers": [
+            "phtools.surface = aiida_phtools.parsers:MultiplyParser"
+        ],
+        "aiida.data": [
+            "phtools.factors = aiida_phtools.data.multiply:MultiplyParameters"
+        ],
+        "aiida.cmdline.data": [
+            "phtools.factors = aiida_phtools.data.data_cli:cli"
+        ]
+    },
+    "scripts": ["examples/cli.py"],
+    "setup_requires": ["reentry"],
+    "reentry_register": true,
+    "install_requires": [
+        "aiida >= 0.11",
+        "voluptuous"
+    ],
+    "extras_require": {
+        "testing": [
+            "aiida-core[testing]"
+        ],
+        "pre-commit": [
+            "pre-commit",
+            "yapf",
+            "prospector",
+            "pylint"
+        ],
+        "docs": [
+            "sphinx"
+        ]
+    }
+}
