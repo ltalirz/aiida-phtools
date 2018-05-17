@@ -14,10 +14,10 @@
             "phtools.surface = aiida_phtools.calculations:PoreSurfaceCalculation"
         ],
         "aiida.parsers": [
-            "phtools.surface = aiida_phtools.parsers:MultiplyParser"
+            "phtools.surface = aiida_phtools.parsers:PoreSurfaceParser"
         ],
         "aiida.data": [
-            "phtools.factors = aiida_phtools.data.multiply:MultiplyParameters"
+            "phtools.surface = aiida_phtools.data:PoreSurfaceParameters"
         ],
         "aiida.cmdline.data": [
             "phtools.factors = aiida_phtools.data.data_cli:cli"

@@ -3,15 +3,17 @@ Data types provided by plugin
 
 Register data types via the "aiida.data" entry point in setup.json.
 """
-from voluptuous import Schema, Optional
+from voluptuous import Schema, Optional, Required
 from aiida.orm.data.parameter import ParameterData
 
 cmdline_parameters = {
-    'accessible_surface_area': float,
-    'output_surface': Optional(str, default='out.sa'),
-    'sampling_density': Optional(float, default=0.5),
-    'target_volume': Optional(float, default=0.0),
+    Required('accessible_surface_area'): float,
+    Optional('output_surface', default='out.vsa'): str,
+    Optional('sampling_density', default=0.5): float,
+    Optional('target_volume', default=0.0): float,
 }
+
+schema = Schema(cmdline_parameters)
 
 
 class PoreSurfaceParameters(ParameterData):
@@ -35,17 +37,17 @@ class PoreSurfaceParameters(ParameterData):
             super(PoreSurfaceParameters, self).__init__(**kwargs)
         else:
             # set dictionary of ParameterData
-            super(PoreSurfaceParameters, self).__init__(dict=dict, **kwargs)
             dict = self.validate(dict)
+            super(PoreSurfaceParameters, self).__init__(dict=dict, **kwargs)
 
     def validate(self, parameters_dict):
         """validate parameters"""
-        return PoreSurfaceParameters.schema(parameters_dict, required=True)
+        return PoreSurfaceParameters.schema(parameters_dict)
 
     def cmdline_params(self, structure_file_name, surface_sample_file_name):
         """Synthesize command line parameters
 
-        e.g. [ ['struct.cssr'], ['struct.sa'], [2.4]]
+        e.g. [ ['struct.cssr'], ['struct.vsa'], [2.4]]
         """
         parameters = []
 
@@ -69,9 +71,9 @@ class PoreSurfaceParameters(ParameterData):
         output_list = []
 
         pm_dict = self.get_dict()
-        output_list.append(pm_dict['output_file'])
+        output_list.append(pm_dict['output_surface'])
         if pm_dict['target_volume'] != 0.0:
-            output_list.append(pm_dict['output_file'] + str(".cell"))
+            output_list.append(pm_dict['output_surface'] + str(".cell"))
 
         return output_list
 

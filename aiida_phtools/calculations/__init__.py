@@ -131,7 +131,7 @@ class PoreSurfaceCalculation(JobCalculation):
         # will call ./code.py in.json out.json
         codeinfo.cmdline_params = parameters.cmdline_params(
             structure_file_name=structure.filename,
-            surface_sample_file_name=surface_sample.file_name)
+            surface_sample_file_name=surface_sample.filename)
         codeinfo.code_uuid = code.uuid
         calcinfo.codes_info = [codeinfo]
 

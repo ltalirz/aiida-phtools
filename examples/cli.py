@@ -1,15 +1,13 @@
 #!/usr/bin/env runaiida
 # -*- coding: utf-8 -*-
-import sys
 import os
 import click
 
 
 @click.command('cli')
-@click.argument('codename')
-@click.argument('computer_name')
+@click.argument('codelabel')
 @click.option('--submit', is_flag=True, help='Actually submit calculation')
-def main(codename, computer_name, submit):
+def main(codelabel, submit):
     """Command line interface for testing and submitting calculations.
 
     Usage: ./cli.py CODENAME COMPUTER_NAME
@@ -20,26 +18,32 @@ def main(codename, computer_name, submit):
 
     This script extends submit.py, adding flexibility in the selected code/computer.
     """
-    from aiida.common.exceptions import NotExistent
-
-    code = Code.get_from_string(codename)
-    computer = Computer.get(computer_name)
-
-    # Prepare input parameters
-    MultiplyParameters = DataFactory('phtools.factors')
-    parameters = MultiplyParameters(x1=2, x2=3)
+    code = Code.get_from_string(codelabel)
 
     # set up calculation
     calc = code.new_calc()
-    calc.label = "aiida_phtools computes 2*3"
-    calc.description = "Test job submission with the aiida_phtools plugin"
-    calc.set_max_wallclock_seconds(30 * 60)  # 30 min
-    # This line is only needed for local codes, otherwise the computer is
-    # automatically set from the code
-    calc.set_computer(computer)
+    calc.label = "aiida_phtools example calculation"
+    calc.description = "Computes proper pore surface as needed for persistence homology calculation"
+    calc.set_max_wallclock_seconds(1 * 60)
     calc.set_withmpi(False)
     calc.set_resources({"num_machines": 1})
+
+    # Prepare input parameters
+    PoreSurfaceParameters = DataFactory('phtools.surface')
+    d = {
+        'accessible_surface_area': 300.0,
+        'target_volume': 40e3,
+    }
+    parameters = PoreSurfaceParameters(dict=d)
     calc.use_parameters(parameters)
+
+    SinglefileData = DataFactory('singlefile')
+    this_dir = os.path.dirname(os.path.realpath(__file__))
+    structure = SinglefileData(file=os.path.join(this_dir, 'HKUST-1.cssr'))
+    calc.use_structure(structure)
+
+    surface_sample = SinglefileData(file=os.path.join(this_dir, 'HKUST-1.vsa'))
+    calc.use_surface_sample(surface_sample)
 
     if submit:
         calc.store_all()
