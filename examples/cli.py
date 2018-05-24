@@ -33,6 +33,7 @@ def main(codelabel, submit):
     d = {
         'accessible_surface_area': 300.0,
         'target_volume': 40e3,
+        'sampling_method': 'random',
     }
     parameters = PoreSurfaceParameters(dict=d)
     calc.use_parameters(parameters)

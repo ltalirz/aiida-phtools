@@ -3,17 +3,24 @@ Data types provided by plugin
 
 Register data types via the "aiida.data" entry point in setup.json.
 """
-from voluptuous import Schema, Optional, Required
+from voluptuous import Schema, Optional, Required, Any
 from aiida.orm.data.parameter import ParameterData
+
+sampling_methods = {
+    'random': 1,
+    'max_min': 2,
+    'grid': 3,
+    'epsilon_net': 4,
+}
 
 cmdline_parameters = {
     Required('accessible_surface_area'): float,
-    Optional('output_surface', default='out.vsa'): str,
     Optional('sampling_density', default=0.5): float,
+    Optional('output_surface', default='out.vsa'): str,
     Optional('target_volume', default=0.0): float,
+    Optional('sampling_method', default=2): Any(*sampling_methods.keys()),
+    Optional('cubic_target', default=1): int,
 }
-
-schema = Schema(cmdline_parameters)
 
 
 class PoreSurfaceParameters(ParameterData):
@@ -56,10 +63,18 @@ class PoreSurfaceParameters(ParameterData):
 
         pm_dict = self.get_dict()
 
+        # replace sampling method string by number
+        pm_dict['sampling_method'] = sampling_methods[pm_dict[
+            'sampling_method']]
+
         # order matters here!
         for key in [
-                'accessible_surface_area', 'sampling_density',
-                'output_surface', 'target_volume'
+                'accessible_surface_area',
+                'sampling_density',
+                'output_surface',
+                'target_volume',
+                'sampling_method',
+                'cubic_target',
         ]:
             parameters.append(pm_dict[key])
 
@@ -78,13 +93,13 @@ class PoreSurfaceParameters(ParameterData):
         return output_list
 
     @property
-    def output_keys(self):
+    def output_links(self):
         """Return list of output link names"""
-        output_keys = []
+        output_links = []
 
         pm_dict = self.get_dict()
-        output_keys.append('surface_sample')
+        output_links.append('surface_sample')
         if pm_dict['target_volume'] != 0.0:
-            output_keys.append('surface_cell')
+            output_links.append('surface_cell')
 
-        return self.output_keys
+        return output_links
