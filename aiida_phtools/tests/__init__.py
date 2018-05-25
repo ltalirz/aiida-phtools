@@ -20,7 +20,7 @@ def get_path_to_binary(binary):
     import distutils.spawn
     path = distutils.spawn.find_executable(binary)
     if path is None:
-        raise ValueError("{} binary not found in PATH.")
+        raise ValueError("{} binary not found in PATH.".format(binary))
 
     return path
 

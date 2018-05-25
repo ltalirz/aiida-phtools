@@ -60,15 +60,6 @@ class DistanceMatrixCalculation(JobCalculation):
     def _validate_inputs(self, inputdict):
         """ Validate input links.
         """
-        # Check inputdict
-        try:
-            parameters = inputdict.pop(self.get_linkname('parameters'))
-        except KeyError:
-            raise InputValidationError("No parameters specified for this "
-                                       "calculation")
-        if not isinstance(parameters, ParameterData):
-            raise InputValidationError("parameters not of type "
-                                       "ParameterData")
         # Check code
         try:
             code = inputdict.pop(self.get_linkname('code'))
@@ -98,7 +89,7 @@ class DistanceMatrixCalculation(JobCalculation):
         if inputdict:
             raise ValidationError("Unrecognized inputs: {}".format(inputdict))
 
-        return parameters, code, surface_sample, cell
+        return code, surface_sample, cell
 
     def _prepare_for_submission(self, tempfolder, inputdict):
         """
@@ -109,7 +100,7 @@ class DistanceMatrixCalculation(JobCalculation):
             :param inputdict: dictionary of the input nodes as they would
                 be returned by get_inputs_dict
         """
-        parameters, code, surface_sample, cell = \
+        code, surface_sample, cell = \
                 self._validate_inputs(inputdict)
 
         # Prepare CalcInfo to be returned to aiida
@@ -120,11 +111,11 @@ class DistanceMatrixCalculation(JobCalculation):
             [cell.get_file_abs_path(), cell.filename],
         ]
         calcinfo.remote_copy_list = []
-        calcinfo.retrieve_list = parameters.output_files
+        calcinfo.retrieve_list = self.output_files()
 
         codeinfo = CodeInfo()
         # will call ./code.py in.json out.json
-        codeinfo.cmdline_params = parameters.cmdline_params(
+        codeinfo.cmdline_params = self.cmdline_params(
             surface_sample_file_name=surface_sample.filename,
             cell_file_name=cell.filename,
         )
@@ -145,3 +136,6 @@ class DistanceMatrixCalculation(JobCalculation):
         parameters += [self._OUTPUT_FILE_NAME]
 
         return map(str, parameters)
+
+    def output_files(self):
+        return [self._OUTPUT_FILE_NAME]
