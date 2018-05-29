@@ -16,11 +16,11 @@ def get_backend():
     return BACKEND_DJANGO
 
 
-def get_path_to_binary(binary):
+def get_path_to_executable(executable):
     import distutils.spawn
-    path = distutils.spawn.find_executable(binary)
+    path = distutils.spawn.find_executable(executable)
     if path is None:
-        raise ValueError("{} binary not found in PATH.".format(binary))
+        raise ValueError("{} executable not found in PATH.".format(executable))
 
     return path
 
@@ -41,15 +41,23 @@ def get_localhost_computer():
     return computer
 
 
-def get_code(binary, plugin):
+executables = {
+    'phtools.dmatrix': 'distance_matrix',
+    'phtools.surface': 'pore_surface',
+}
+
+
+def get_code(plugin, computer):
     """Setup code on localhost computer"""
     from aiida.orm import Code
 
+    executable = executables[plugin]
+    path = get_path_to_executable(executable)
     code = Code(
-        files=[get_path_to_binary(binary)],
         input_plugin_name=plugin,
-        local_executable=binary)
-    code.label = binary
+        remote_computer_exec=[computer, path],
+    )
+    code.label = "{} executable".format(executable)
 
     return code
 

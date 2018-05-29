@@ -5,13 +5,13 @@ import os
 import aiida_phtools.tests as pt
 
 
-class TestPoreSurface(pt.PluginTestCase):
+class TestDistanceMatrix(pt.PluginTestCase):
     def setUp(self):
 
         # set up test computer
         self.computer = pt.get_localhost_computer().store()
         self.code = pt.get_code(
-            plugin='phtools.surface', computer=self.computer).store()
+            plugin='phtools.dmatrix', computer=self.computer).store()
 
     def test_submit_HKUST1(self):
         """Test submitting a calculation"""
@@ -28,22 +28,13 @@ class TestPoreSurface(pt.PluginTestCase):
 
         # Prepare input parameters
         from aiida.orm import DataFactory
-        PoreSurfaceParameters = DataFactory('phtools.surface')
-        d = {
-            'accessible_surface_area': 4464.02,
-            'target_volume': 40e3,
-            'sampling_method': 'random',
-        }
-        parameters = PoreSurfaceParameters(dict=d)
-        calc.use_parameters(parameters)
-
         SinglefileData = DataFactory('singlefile')
-        structure = SinglefileData(file=os.path.join(TEST_DIR, 'HKUST-1.cssr'))
-        calc.use_structure(structure)
-
         surface_sample = SinglefileData(
             file=os.path.join(TEST_DIR, 'HKUST-1.vsa'))
         calc.use_surface_sample(surface_sample)
+
+        cell = SinglefileData(file=os.path.join(TEST_DIR, 'HKUST-1.cell'))
+        calc.use_cell(cell)
 
         calc.store_all()
         #calc.submit()
