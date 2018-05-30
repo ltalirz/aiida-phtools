@@ -9,11 +9,22 @@ from aiida.orm.data.cif import CifData
 from aiida.orm.data.parameter import ParameterData
 #from aiida.orm.data.base import Int, Float, Str
 
-from aiida.work.workchain import WorkChain, ToContext, Calc
+from aiida.work.workchain import WorkChain, ToContext, Outputs
 from aiida.work.run import submit
+from aiida.work.workfunction import workfunction
 
 
 class DistanceMatrixWorkChain(WorkChain):
+
+    default_options = {
+        "resources": {
+            "num_machines": 1,
+            "num_mpiprocs_per_machine": 1,
+        },
+        "max_wallclock_seconds": 60 * 3,
+        "withmpi": False,
+    }
+
     @classmethod
     def define(cls, spec):
         super(DistanceMatrixWorkChain, cls).define(spec)
@@ -28,17 +39,21 @@ class DistanceMatrixWorkChain(WorkChain):
             default=ParameterData(dict={}),
             required=False)
 
-        spec.outline(cls.run_zeopp,
-                     #cls.run_pore_surface,
-                     #cls.run_distance_matrix,
-                     )
+        spec.outline(
+            cls.run_zeopp,
+            cls.run_pore_surface,
+            #cls.run_distance_matrix,
+        )
 
         spec.dynamic_output()
 
     # =========================================================================
     def run_zeopp(self):
 
-        label = "pore_surface"
+        self.report("Running workchain for structure {}".format(
+            self.inputs.structure.filename))
+
+        label = "zeopp"
         inputs = {}
         inputs['_label'] = label
         inputs['_description'] = "Sampling accessible pore surface with zeo++"
@@ -49,25 +64,69 @@ class DistanceMatrixWorkChain(WorkChain):
         network_dict = {
             'cssr': True,
             'ha': True,
+            'vsa': [1.8, 1.8, 1000],
             'sa': [1.8, 1.8, 1000],
         }
         inputs['parameters'] = NetworkParameters(dict=network_dict)
-
-        inputs['_options'] = {
-            "resources": {
-                "num_machines": 1,
-                "num_mpiprocs_per_machine": 1
-            },
-            "max_wallclock_seconds": 60 * 3,
-            "withmpi": False,
-        }
+        inputs['_options'] = self.default_options
 
         NetworkCalculation = CalculationFactory('zeopp.network')
         future = submit(NetworkCalculation.process(), **inputs)
-        return ToContext(**{label: Calc(future)})
+        self.report(
+            "pk: {} | Submitted zeo++ calculation for structure {}".format(
+                future.pid, self.inputs.structure.filename))
 
+        return ToContext(**{label: Outputs(future)})
 
 #    # =========================================================================
+
+    def run_pore_surface(self):
+
+        zeopp_out = self.ctx.zeopp
+
+        label = "pore_surface"
+        inputs = {}
+        inputs['_label'] = label
+        inputs[
+            '_description'] = "Subsampling pore surface & formation of supercell"
+        inputs['code'] = self.inputs.pore_surface_code
+        inputs['parameters'] = get_pore_surface_parameters(
+            zeopp_out['surface_area_sa'])
+        inputs['surface_sample'] = zeopp_out['surface_sample_vsa']
+        inputs['structure'] = zeopp_out['structure_cssr']
+        inputs['_options'] = self.default_options
+
+        PoreSurfaceCalculation = CalculationFactory('phtools.surface')
+        future = submit(PoreSurfaceCalculation.process(), **inputs)
+        self.report("pk: {} | Submitted pore_surface for structure {}".format(
+            future.pid, inputs['structure']))
+
+        return ToContext(**{label: Outputs(future)})
+
+#    # =========================================================================
+
+    def run_distance_matrix(self):
+
+        pore_surface_out = self.ctx.pore_surface
+
+        label = "distance_matrix"
+        inputs = {}
+        inputs['_label'] = label
+        inputs[
+            '_description'] = "Computing the distance matrix for surface point cloud"
+        inputs['code'] = self.inputs.distance_matrix_code
+        inputs['surface_sample'] = pore_surface_out['surface_sample']
+        inputs['cell'] = pore_surface_out['cell']
+        inputs['_options'] = self.default_options
+
+        DistanceMatrixCalculation = CalculationFactory('phtools.dmatrix')
+        future = submit(DistanceMatrixCalculation.process(), **inputs)
+        self.report(
+            "pk: {} | Submitted distance_matrix for structure {}".format(
+                future.pid, self.inputs.structure.filename))
+
+        return ToContext(**{label: Outputs(future)})
+
 #    def run_cell_opt2(self):
 #        prev_calc = self.ctx.cell_opt1
 #        self._check_prev_calc(prev_calc)
@@ -344,21 +403,21 @@ class DistanceMatrixWorkChain(WorkChain):
 #        return ToContext(pdos=Calc(future))
 #
 #    # =========================================================================
-#    def _check_prev_calc(self, prev_calc):
-#        error = None
-#        if prev_calc.get_state() != 'FINISHED':
-#            error = "Previous calculation in state: "+prev_calc.get_state()
-#        elif "aiida.out" not in prev_calc.out.retrieved.get_folder_list():
-#            error = "Previous calculation did not retrive aiida.out"
-#        else:
-#            fn = prev_calc.out.retrieved.get_abs_path("aiida.out")
-#            content = open(fn).read()
-#            if "JOB DONE." not in content:
-#                error = "Previous calculation not DONE."
-#        if error:
-#            self.report("ERROR: "+error)
-#            self.abort(msg=error)
-#            raise Exception(error)
+
+    def _check_prev_calc(self, prev_calc):
+        error = None
+        if prev_calc.get_state() != 'FINISHED':
+            error = "Previous calculation in state: " + prev_calc.get_state()
+        elif "aiida.out" not in prev_calc.out.retrieved.get_folder_list():
+            error = "Previous calculation did not retrieve aiida.out"
+        if error:
+            self.report("ERROR: " + error)
+            self.abort(msg=error)
+            raise Exception(error)
+
+        return prev_calc
+
+
 #
 #    # =========================================================================
 #    def _submit_zeopp_calc(self, structure, label, runtype,
@@ -511,3 +570,18 @@ class DistanceMatrixWorkChain(WorkChain):
 #python ./postprocess.py
 #"""
 #        return append_text
+
+
+@workfunction
+def get_pore_surface_parameters(surface_area):
+    """ Get input parameters for pore surface binary.
+
+    Keep provenance.
+    """
+    PoreSurfaceParameters = DataFactory('phtools.surface')
+    d = {
+        'accessible_surface_area': surface_area.get_dict()['ASA_A^2'],
+        'target_volume': 40e3,
+        'sampling_method': 'random',
+    }
+    return PoreSurfaceParameters(dict=d)

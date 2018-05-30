@@ -97,7 +97,7 @@ class PoreSurfaceCalculation(JobCalculation):
                     "surface_sample not of type SinglefileData")
         except KeyError:
             raise InputValidationError(
-                "No input structure specified for calculation")
+                "No surface sample specified for calculation")
 
         # Check that nothing is left unparsed
         if inputdict:

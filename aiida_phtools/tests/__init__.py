@@ -57,7 +57,7 @@ def get_code(plugin, computer):
         input_plugin_name=plugin,
         remote_computer_exec=[computer, path],
     )
-    code.label = "{} executable".format(executable)
+    code.label = executable
 
     return code
 
