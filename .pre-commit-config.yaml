@@ -14,4 +14,3 @@
   hooks:
   - id: prospector
     language: system
-    exclude: '^(tests/)|(examples/)'

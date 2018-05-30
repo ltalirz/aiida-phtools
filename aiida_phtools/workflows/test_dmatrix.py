@@ -4,18 +4,17 @@
 import os
 import aiida_phtools.tests as pt
 import aiida_zeopp.tests as zt
+import aiida_gudhi.tests as gt
 
 
 class TestDistanceMatrixWorkChain(pt.PluginTestCase):
     def setUp(self):
 
         # set up test computer
-        self.computer = pt.get_localhost_computer().store()
-        self.zeopp_code = zt.get_network_code(self.computer).store()
-        self.pore_surface_code = pt.get_code(
-            plugin='phtools.surface', computer=self.computer).store()
-        self.distance_matrix_code = pt.get_code(
-            plugin='phtools.dmatrix', computer=self.computer).store()
+        self.zeopp_code = zt.get_code(entry_point='zeopp.network')
+        self.pore_surface_code = pt.get_code(entry_point='phtools.surface')
+        self.distance_matrix_code = pt.get_code(entry_point='phtools.dmatrix')
+        self.rips_code = gt.get_code(entry_point='gudhi.rdm')
 
     def test_run_workchain(self):
         """Test running the WorkChain"""
@@ -33,6 +32,7 @@ class TestDistanceMatrixWorkChain(pt.PluginTestCase):
             zeopp_code=self.zeopp_code,
             pore_surface_code=self.pore_surface_code,
             distance_matrix_code=self.distance_matrix_code,
+            rips_code=self.rips_code,
         )
 
         print(outputs)

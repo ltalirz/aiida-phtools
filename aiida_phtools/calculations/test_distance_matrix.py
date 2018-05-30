@@ -9,9 +9,7 @@ class TestDistanceMatrix(pt.PluginTestCase):
     def setUp(self):
 
         # set up test computer
-        self.computer = pt.get_localhost_computer().store()
-        self.code = pt.get_code(
-            plugin='phtools.dmatrix', computer=self.computer).store()
+        self.code = pt.get_code(entry_point='phtools.dmatrix')
 
     def test_submit_HKUST1(self):
         """Test submitting a calculation"""
@@ -37,5 +35,4 @@ class TestDistanceMatrix(pt.PluginTestCase):
         calc.use_cell(cell)
 
         calc.store_all()
-        #calc.submit()
-        calc.submit_test(folder=pt.get_temp_folder())
+        calc.submit()

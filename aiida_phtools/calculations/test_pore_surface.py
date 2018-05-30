@@ -9,9 +9,7 @@ class TestPoreSurface(pt.PluginTestCase):
     def setUp(self):
 
         # set up test computer
-        self.computer = pt.get_localhost_computer().store()
-        self.code = pt.get_code(
-            plugin='phtools.surface', computer=self.computer).store()
+        self.code = pt.get_code(entry_point='phtools.surface')
 
     def test_submit_HKUST1(self):
         """Test submitting a calculation"""
