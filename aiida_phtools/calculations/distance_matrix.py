@@ -30,7 +30,7 @@ class DistanceMatrixCalculation(JobCalculation):
         # reuse base class function
         super(DistanceMatrixCalculation, self)._init_internal_params()
 
-        self._default_parser = 'phtools.surface'
+        self._default_parser = 'phtools.dmatrix'
 
     @classproperty
     def _use_methods(cls):

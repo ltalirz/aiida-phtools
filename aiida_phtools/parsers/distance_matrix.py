@@ -62,7 +62,11 @@ class DistanceMatrixParser(Parser):
                     output_files))
             return success, node_list
 
-        node_list.append(('distance_matrix', self._calc._OUTPUT_FILE_NAME))
+        # Do not return distance matrix, as it is too large
+        #from aiida.orm.data.singlefile import SinglefileData
+        #node = SinglefileData(
+        #    file=out_folder.get_abs_path(self._calc._OUTPUT_FILE_NAME))
+        #node_list.append(('distance_matrix', node))
 
         success = True
         return success, node_list

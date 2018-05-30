@@ -100,6 +100,6 @@ class PoreSurfaceParameters(ParameterData):
         pm_dict = self.get_dict()
         output_links.append('surface_sample')
         if pm_dict['target_volume'] != 0.0:
-            output_links.append('surface_cell')
+            output_links.append('cell')
 
         return output_links
