@@ -7,6 +7,7 @@ from aiida.orm.code import Code
 
 from aiida.orm.data.cif import CifData
 from aiida.orm.data.parameter import ParameterData
+from aiida.orm.data.singlefile import SinglefileData
 #from aiida.orm.data.base import Int, Float, Str
 
 from aiida.work.workchain import WorkChain, ToContext, Outputs
@@ -47,9 +48,11 @@ class DistanceMatrixWorkChain(WorkChain):
             cls.run_pore_surface,
             cls.run_distance_matrix,
             cls.run_rips_complex,
+            cls.run_finish,
         )
 
-        spec.dynamic_output()
+        spec.output('barcode', valid_type=SinglefileData)
+        spec.output('pore_surface', valid_type=SinglefileData)
 
     # =========================================================================
 
@@ -124,6 +127,8 @@ class DistanceMatrixWorkChain(WorkChain):
         inputs['cell'] = pore_surface_out['cell']
         inputs['_options'] = self.default_options
 
+        self.out("pore_surface", pore_surface_out['surface_sample'])
+
         DistanceMatrixCalculation = CalculationFactory('phtools.dmatrix')
         future = submit(DistanceMatrixCalculation.process(), **inputs)
         self.report(
@@ -160,17 +165,20 @@ class DistanceMatrixWorkChain(WorkChain):
 
     # =========================================================================
 
-    def run_cleanup(self):
-        # TODO: Delete distance matrix to save space
-        #distance_matrix_out = self.ctx.distance_matrix
-        pass
+    def run_finish(self):
+        self.out("barcode", self.ctx.rips_complex['rips_complex'])
+
+        # Delete distance matrix again to save space
+        # pylint: disable=protected-access
+        self.ctx.distance_matrix['remote_folder']._clean()
 
 
 @workfunction
 def get_pore_surface_parameters(surface_area):
     """ Get input parameters for pore surface binary.
 
-    Keep provenance.
+    Get input parameters for pore_surface binary from zeo++ output,
+    while keeping data provenance.
     """
     PoreSurfaceParameters = DataFactory('phtools.surface')
     d = {
