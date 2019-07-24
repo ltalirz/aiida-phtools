@@ -29,7 +29,7 @@
     "install_requires": [
         "aiida-core >=0.12.3,<1.0",
         "aiida-zeopp >=0.2,<1.0",
-        "aiida-gudhi<1.0",
+        "aiida-gudhi",
         "voluptuous"
     ],
     "extras_require": {
