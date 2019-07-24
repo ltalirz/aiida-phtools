@@ -99,7 +99,7 @@ class DistanceMatrixWorkChain(WorkChain):
             '_description'] = "Subsampling pore surface & formation of supercell"
         inputs['code'] = self.inputs.pore_surface_code
         inputs['parameters'] = get_pore_surface_parameters(
-            zeopp_out['surface_area_sa'])
+            zeopp_out['output_parameters'])
         inputs['surface_sample'] = zeopp_out['surface_sample_vsa']
         inputs['structure'] = zeopp_out['structure_cssr']
         inputs['_options'] = self.default_options
@@ -174,7 +174,7 @@ class DistanceMatrixWorkChain(WorkChain):
 
 
 @workfunction
-def get_pore_surface_parameters(surface_area):
+def get_pore_surface_parameters(zeopp_output_parameters):
     """ Get input parameters for pore surface binary.
 
     Get input parameters for pore_surface binary from zeo++ output,
@@ -182,7 +182,8 @@ def get_pore_surface_parameters(surface_area):
     """
     PoreSurfaceParameters = DataFactory('phtools.surface')
     d = {
-        'accessible_surface_area': surface_area.get_dict()['ASA_A^2'],
+        'accessible_surface_area':
+        zeopp_output_parameters.get_dict()['ASA_A^2'],
         'target_volume': 40e3,
         'sampling_method': 'random',
     }
