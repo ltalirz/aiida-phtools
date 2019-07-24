@@ -13,6 +13,8 @@ addons:
 install:
 # Upgrade pip setuptools and wheel
 - pip install -U pip wheel setuptools
+# Fix for pymatgen
+- pip install numpy==1.16.4
 - pip install .[precommit,testing]
 
 env:
